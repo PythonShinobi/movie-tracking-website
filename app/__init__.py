@@ -3,7 +3,13 @@
 from flask import Flask
 
 from app.config import config
-from app.extensions import db, csrf
+from app.extensions import (
+    db, 
+    csrf,
+    migrate,
+    bootstrap,
+    login_manager,
+)
 
 
 def create_app(config_name: str = "default") -> Flask:
@@ -17,5 +23,8 @@ def create_app(config_name: str = "default") -> Flask:
 
     db.init_app(app)
     csrf.init_app(app)
+    migrate.init_app(app)
+    bootstrap.init_app(app)
+    login_manager.init_app(app)
 
     return app
