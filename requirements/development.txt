@@ -1,0 +1,5 @@
+-r base.txt
+
+Faker==40.18.0
+pytest==9.0.3
+Pygments==2.20.0
