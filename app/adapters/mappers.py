@@ -3,7 +3,8 @@
 from app.domain.user import User
 from app.adapters.orm import UserModel
 
-def user_to_model(user: User) -> UserModel:
+
+def user_object_to_user_model(user: User) -> UserModel:
     """Convert a domain User into a SQLAlchemy UserModel."""
 
     return UserModel(
@@ -13,7 +14,7 @@ def user_to_model(user: User) -> UserModel:
         password_hash=user.password_hash
     )
 
-def model_to_user(user_model: UserModel) -> User:
+def user_model_to_user_object(user_model: UserModel) -> User:
     """Convert a SQLAlchemy UserModel into a domain User."""
 
     return User(

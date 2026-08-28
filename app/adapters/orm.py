@@ -2,6 +2,7 @@
 
 from app.extensions import db
 
+
 class UserModel(db.Model):
     """Represent a user record in the database."""
 
