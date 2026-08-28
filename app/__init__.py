@@ -23,8 +23,8 @@ def create_app(config_name: str = "default") -> Flask:
 
     db.init_app(app)
     csrf.init_app(app)
-    migrate.init_app(app)
     bootstrap.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
 
     return app

@@ -5,10 +5,12 @@ class User:
 
     def __init__(
             self,
+            id: int | None,
             email: str,
             username: str,
             password_hash: str,
     ) -> None:
+        self.id = id
         self.email = email
         self.username = username
         self.password_hash = password_hash
