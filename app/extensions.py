@@ -13,6 +13,9 @@ csrf = CSRFProtect()
 
 bootstrap = Bootstrap()
 
-login_manager = LoginManager()
-
 migrate = Migrate()
+
+login_manager = LoginManager()
+# Flask-Login will know where to send an unauthenticated user 
+# if they try to access a protected page.
+login_manager.login_view = "auth.login"
