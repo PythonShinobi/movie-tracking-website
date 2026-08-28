@@ -1,0 +1,1 @@
+"""Adapters that connect the domain to external systems and infrastructure."""
