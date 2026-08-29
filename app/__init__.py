@@ -1,6 +1,6 @@
 """Create and configure the Flask application using the application factory pattern."""
 
-from flask import Flask
+from flask import Flask, render_template
 
 from app.config import config
 from app.auth import auth as auth_blueprint
@@ -30,5 +30,10 @@ def create_app(config_name: str = "default") -> Flask:
 
     # Register authentication blueprint with application.
     app.register_blueprint(auth_blueprint, url_prefix="/auth")
+
+    @app.errorhandler(404)
+    def page_not_found(error):
+        """Render the custom page shown when a requested page does not exist."""
+        return render_template("errors/404.html"), 404
 
     return app

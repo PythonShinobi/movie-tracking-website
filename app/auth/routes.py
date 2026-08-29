@@ -21,7 +21,6 @@ def register():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-
         # Create the application service with the dependencies
         # required to perform user registration.
         service = AuthenticationService(
@@ -29,19 +28,25 @@ def register():
             password_hasher=PasswordHasher()
         )
 
-        # Delegate the registration business workflow to the service.
-        # The service creates the domain User and persists it through
-        # the repository.
-        service.register(
-            email=form.email.data,
-            username=form.username.data,
-            password=form.password.data
-        )
+        try:
+            # Delegate the registration business workflow to the service.
+            service.register(
+                email=form.email.data,
+                username=form.username.data,
+                password=form.password.data
+            )
 
-        # Commit the pending database transaction after the service
-        # has successfully completed the registration operation.
-        db.session.commit()
+            # Commit the pending database transaction after the service
+            # has successfully completed the registration operation.
+            db.session.commit()
 
-        return redirect(url_for("auth.register"))
+        except ValueError as error:
+            # The service rejected the registration because of a
+            # business rule, such as an email that already exists.
+            form.email.errors.append(str(error))
+
+        else:
+            # Registration succeeded, so redirect to the registration page.
+            return redirect(url_for("auth.register"))
 
     return render_template("auth/register.html", form=form)
