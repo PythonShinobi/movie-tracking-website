@@ -36,4 +36,10 @@ def create_app(config_name: str = "default") -> Flask:
         """Render the custom page shown when a requested page does not exist."""
         return render_template("errors/404.html"), 404
 
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        """Render the custom page shown when an internal server error occurs."""
+        db.session.rollback()
+        return render_template("errors/500.html"), 500
+
     return app
