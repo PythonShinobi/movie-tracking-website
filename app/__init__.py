@@ -3,6 +3,7 @@
 from flask import Flask
 
 from app.config import config
+from app.auth import auth as auth_blueprint
 from app.extensions import (
     db, 
     csrf,
@@ -26,5 +27,8 @@ def create_app(config_name: str = "default") -> Flask:
     bootstrap.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+
+    # Register authentication blueprint with application.
+    app.register_blueprint(auth_blueprint, url_prefix="/auth")
 
     return app

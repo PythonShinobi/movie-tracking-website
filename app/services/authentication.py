@@ -12,7 +12,7 @@ class AuthenticationService:
             repository: UserRepository,
             password_hasher: PasswordHasher
     ) -> None:
-        self.repository = repository
+        self.user_repository = repository
         self.password_hasher = password_hasher
 
     def register(
@@ -23,7 +23,7 @@ class AuthenticationService:
     ) -> User:
         """Register a new user."""
 
-        existing_user = self.repository.get_by_email(email)
+        existing_user = self.user_repository.get_by_email(email)
 
         if existing_user is not None:
             raise ValueError("Email already exists.")
@@ -37,6 +37,6 @@ class AuthenticationService:
             password_hash=password_hash
         )
 
-        self.repository.add(user)
+        self.user_repository.add(user)
 
         return user
