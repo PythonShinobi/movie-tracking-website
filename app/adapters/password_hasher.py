@@ -22,9 +22,9 @@ class PasswordHasher:
         return password_hash.decode("utf-8")
 
     def verify(
-            self,
-            password: str,
-            password_hash: str
+        self,
+        password: str,
+        password_hash: str
     ) -> bool:
         """Verify a plaintext password against a stored hash."""
 
