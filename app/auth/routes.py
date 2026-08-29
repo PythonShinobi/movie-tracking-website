@@ -1,35 +1,47 @@
 """HTTP routes for authentication."""
 
-from flask import jsonify, request
+from flask import (    
+    url_for,
+    redirect,
+    render_template
+)
 
 from app.extensions import db
 from app.auth import auth as auth_blueprint
+from app.auth.forms import RegistrationForm
 from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
 from app.services.authentication import AuthenticationService
 
 
-@auth_blueprint.route("/register", methods=["POST"])
+@auth_blueprint.route("/register", methods=["GET", "POST"])
 def register():
     """Register a new user."""
 
-    data = request.get_json()
+    form = RegistrationForm()
 
-    service = AuthenticationService(
-        repository=UserRepository(),
-        password_hasher=PasswordHasher()
-    )
+    if form.validate_on_submit():
 
-    user = service.register(
-        email=data["email"],
-        username=data["username"],
-        password=data["password"]
-    )
+        # Create the application service with the dependencies
+        # required to perform user registration.
+        service = AuthenticationService(
+            repository=UserRepository(),
+            password_hasher=PasswordHasher()
+        )
 
-    db.session.commit()
+        # Delegate the registration business workflow to the service.
+        # The service creates the domain User and persists it through
+        # the repository.
+        service.register(
+            email=form.email.data,
+            username=form.username.data,
+            password=form.password.data
+        )
 
-    return jsonify({
-        "id": user.id,
-        "email": user.email,
-        "username": user.username,
-    }), 201
+        # Commit the pending database transaction after the service
+        # has successfully completed the registration operation.
+        db.session.commit()
+
+        return redirect(url_for("auth.register"))
+
+    return render_template("auth/register.html", form=form)

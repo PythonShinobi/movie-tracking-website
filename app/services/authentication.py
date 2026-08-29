@@ -4,22 +4,23 @@ from app.domain.user import User
 from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
 
+
 class AuthenticationService:
     """Provide authentication-related application services."""
 
     def __init__(
-            self, 
-            repository: UserRepository,
-            password_hasher: PasswordHasher
+        self, 
+        repository: UserRepository,
+        password_hasher: PasswordHasher
     ) -> None:
         self.user_repository = repository
         self.password_hasher = password_hasher
 
     def register(
-            self,
-            email: str,
-            username: str,
-            password: str,
+        self,
+        email: str,
+        username: str,
+        password: str,
     ) -> User:
         """Register a new user."""
 
