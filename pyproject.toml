@@ -1,0 +1,12 @@
+# A TOML file is a configuration file.
+
+# TOML stands for Tom's Obvious, Minimal Language. It is designed to let programs 
+# store configuration in a structured, human-readable format.
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[project]
+name = "movie-tracking-website"
+version = "0.1.0"
+description = "A movie and series tracking application"
