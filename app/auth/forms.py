@@ -27,3 +27,19 @@ class RegistrationForm(FlaskForm):
     ])
 
     submit = SubmitField("Register")
+
+
+class LoginForm(FlaskForm):
+    """Form used to login an already existing user."""
+
+    email = StringField("Email", validators=[
+        DataRequired(),
+        Email()
+    ])
+
+    password = PasswordField("Password", validators=[
+        DataRequired(),
+        Length(min=8)
+    ])
+
+    submit = SubmitField("Login")

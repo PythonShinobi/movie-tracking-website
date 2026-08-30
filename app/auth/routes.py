@@ -1,5 +1,6 @@
 """HTTP routes for authentication."""
 
+from flask_login import login_user
 from flask import (    
     url_for,
     redirect,
@@ -7,11 +8,12 @@ from flask import (
 )
 
 from app.extensions import db
+from app.services.authentication import AuthenticationService
 from app.auth import auth as auth_blueprint
-from app.auth.forms import RegistrationForm
+from app.auth.forms import RegistrationForm, LoginForm
 from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
-from app.services.authentication import AuthenticationService
+from app.adapters.flask_login_user import FlaskLoginUser
 
 
 @auth_blueprint.route("/register", methods=["GET", "POST"])
@@ -51,3 +53,39 @@ def register():
             return redirect(url_for("auth.register"))
 
     return render_template("auth/register.html", form=form)
+
+
+@auth_blueprint.route("/login", methods=["GET", "POST"])
+def login():
+    """Authenticate a user and create an authenticated session."""
+
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        # Create the application service with the dependencies
+        # required to authenticate the user.
+        service = AuthenticationService(
+            repository=UserRepository(),
+            password_hasher=PasswordHasher()
+        )
+
+        try:
+            # Delegate credential verification to the application service.
+            user = service.login(
+                email=form.email.data,
+                password=form.password.data
+            )
+
+        except ValueError as error:
+            # The service rejected the credentials.
+            form.email.errors.append(str(error))
+
+        else:
+            # Authenticated succeeded, so create the user's
+            # authenticated Flask-Login session.
+            login_user(FlaskLoginUser(user))
+
+            # Login succeeded, so redirect to the home page.
+            return redirect(url_for("auth.login")) 
+
+    return render_template("auth/login.html", form=form)
