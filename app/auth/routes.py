@@ -45,6 +45,7 @@ def register():
             # business rule, such as an email that already exists.
             form.email.errors.append(str(error))
 
+        # Execute this else block only if the try block finishes without raising an exception
         else:
             # Registration succeeded, so redirect to the registration page.
             return redirect(url_for("auth.register"))

@@ -1,4 +1,14 @@
-"""Map between domain objects and persistence models."""
+"""Map between domain objects and persistence models.
+
+Mappers translate objects between the domain layer and the persistence
+layer, keeping domain models independent of database-specific models.
+
+Examples:
+    - user_object_to_user_model_record(): Converts a User domain object
+      into a UserModelRecord for database persistence.
+    - user_model_record_to_user_object(): Converts a UserModelRecord from
+      the database into a User domain object.
+"""
 
 from app.domain.user import User
 from app.adapters.orm import UserModelRecord

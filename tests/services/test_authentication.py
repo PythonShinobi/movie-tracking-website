@@ -31,8 +31,11 @@ class FakePasswordHasher:
 
     def hash(self, password: str) -> str:
         """Return a predictable password hash."""
-
         return f"hashed-{password}"
+
+    def verify(self, password: str, password_hash: str) -> bool:
+        """Verify a password against the predictable fake hash."""
+        return self.hash(password) == password_hash
 
 
 def test_register_creates_user() -> None:
@@ -115,4 +118,73 @@ def test_register_rejects_existing_email() -> None:
             email="john@example.com",
             username="john",
             password="password123"
+        )
+
+
+def test_login_returns_user_with_valid_credentials() -> None:
+    repository = FakeRepository()
+    password_hasher = FakePasswordHasher()
+
+    user = User(
+        id=1,
+        email="john@example.com",
+        username="john",
+        password_hash="hashed-password123"
+    )
+
+    repository.add(user)
+
+    service = AuthenticationService(
+        repository=repository,
+        password_hasher=password_hasher
+    )
+
+    result = service.login(
+        email="john@example.com",
+        password="password123"
+    )
+
+    assert result == user
+
+
+def test_login_rejects_unknown_email() -> None:
+    repository = FakeRepository()
+    password_hasher = FakePasswordHasher()
+
+    service = AuthenticationService(
+        repository=repository,
+        password_hasher=password_hasher
+    )
+
+    with pytest.raises(ValueError, match="Invalid email or password"):
+        service.login(
+            email="uknown@example.com",
+            password="password123"
+        )
+
+
+def test_login_rejects_incorrect_password() -> None:
+    repository = FakeRepository()
+    password_hasher = FakePasswordHasher()
+
+    user = User(
+        id=1,
+        email="john@example.com",
+        username="john",
+        password_hash="hashed_password"
+    )
+
+    repository.add(user)
+
+    service = AuthenticationService(
+        repository=repository,
+        password_hasher=password_hasher
+    )
+
+    password_hasher.should_verify = False
+
+    with pytest.raises(ValueError, match="Invalid email or password"):
+        service.login(
+            email="john@example.com",
+            password="wrong_password"
         )

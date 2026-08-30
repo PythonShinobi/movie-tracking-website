@@ -1,4 +1,14 @@
-"""Repository implementations for persistent domain objects."""
+"""Repository implementations for persistent domain objects.
+
+Repositories provide an abstraction over data persistence, allowing the
+application and domain layers to work with domain objects without depending
+directly on database-specific details.
+
+Examples:
+    - UserRepository: Stores and retrieves User objects from the database.
+    - get_by_email(): Retrieves a user using their email address.
+    - add(): Persists a new User object and assigns its database-generated ID.
+"""
 
 from app.extensions import db
 from app.domain.user import User
@@ -10,7 +20,16 @@ from app.adapters.mappers import (
 
 
 class UserRepository:
-    """Provide persistence operations for User domain objects."""
+    """Provide persistence operations for User domain objects.
+
+    The repository hides database-specific operations from the application
+    and domain layers, allowing them to work with User objects without
+    depending directly on the ORM.
+
+    Examples:
+        - add(): Persists a new User domain object.
+        - get_by_email(): Retrieves a User by their email address.
+    """
 
     def add(self, user: User) -> None:
         """Persist a new user."""

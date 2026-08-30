@@ -6,20 +6,16 @@ from app.adapters.orm import UserModelRecord
 def test_register_creates_user(client, app):
     response = client.post(
         "/auth/register",
-        json={
+        data={
             "email": "john@example.com",
             "username": "john",
             "password": "password123",
+            "password_confirmation": "password123",
+            "submit": "Register",
         },
     )
 
-    assert response.status_code == 201
-
-    data = response.get_json()
-
-    assert data["email"] == "john@example.com"
-    assert data["username"] == "john"
-    assert data["id"] is not None
+    assert response.status_code == 302
 
     with app.app_context():
         user = UserModelRecord.query.filter_by(
