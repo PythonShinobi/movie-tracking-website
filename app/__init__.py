@@ -4,6 +4,7 @@ from flask import Flask, render_template
 
 from app.config import config
 from app.auth import auth as auth_blueprint
+from app.main import main as main_blueprint
 from app.extensions import (
     db, 
     csrf,
@@ -30,6 +31,9 @@ def create_app(config_name: str = "default") -> Flask:
 
     # Register authentication blueprint with application.
     app.register_blueprint(auth_blueprint, url_prefix="/auth")
+
+    # Register main blueprint with application
+    app.register_blueprint(main_blueprint)
 
     @app.errorhandler(404)
     def page_not_found(error):

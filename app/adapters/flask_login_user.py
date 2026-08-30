@@ -17,25 +17,32 @@ class FlaskLoginUser:
         - get_id(): Returns the user's identifier for session storage.
     """
 
-    def __init__(self, user: User) -> None:
-        """Initialize the adapter with a domain user."""
+    def __init__(self, user: User):
         self.user = user
 
     @property
-    def is_authenticated(self) -> bool:
-        """Return whether the user is authenticated."""
+    def id(self):
+        return self.user.id
+
+    @property
+    def email(self):
+        return self.user.email
+
+    @property
+    def username(self):
+        return self.user.username
+
+    @property
+    def is_authenticated(self):
         return True
 
     @property
-    def is_active(self) -> bool:
-        """Return whether the user account is active."""
+    def is_active(self):
         return True
 
     @property
-    def is_anonymous(self) -> bool:
-        """Return whether the user is anonymous."""
+    def is_anonymous(self):
         return False
 
-    def get_id(self) -> str:
-        """Return the user's ID as a string."""
+    def get_id(self):
         return str(self.user.id)

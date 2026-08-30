@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Movie Tracker{% endblock %}
+
+{% block content %}
+
+<h1>Movie Tracker</h1>
+
+<p>Track the movies you watch and keep your personal movie collection organized.</p>
+
+{% if current_user.is_authenticated %} <p>Welcome, {{ current_user.username }}.</p>
+
+<a href="{{ url_for('main.profile') }}">View Profile</a>
+
+{% else %} <a href="{{ url_for('auth.login') }}">Login</a> <a href="{{ url_for('auth.register') }}">Register</a>
+{% endif %}
+{% endblock %}

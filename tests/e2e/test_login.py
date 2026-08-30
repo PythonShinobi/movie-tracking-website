@@ -60,3 +60,35 @@ def test_login_with_incorrect_password(client):
     )
 
     assert response.status_code == 200
+
+
+def test_authenticated_user_can_access_protected_route(client):
+    client.post(
+        "/auth/register",
+        data={
+            "email": "john@example.com",
+            "username": "john",
+            "password": "password123",
+            "password_confirmation": "password123",
+            "submit": "Register",
+        },
+    )
+
+    client.post(
+        "/auth/login",
+        data={
+            "email": "john@example.com",
+            "password": "password123",
+            "submit": "Login",
+        },
+    )
+
+    response = client.get("/profile")
+
+    assert response.status_code == 200
+
+
+def test_unauthenticated_user_cannot_access_protected_route(client):
+    response = client.get("/profile")
+
+    assert response.status_code == 302
