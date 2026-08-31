@@ -13,4 +13,4 @@ def test_register_endpoint(client):
     )    
 
     assert response.status_code == 302
-    assert response.headers["Location"] == "/auth/register"
+    assert response.headers["Location"] == "/auth/login"

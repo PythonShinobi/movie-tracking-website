@@ -1,15 +1,6 @@
-"""End-to-end tests for login routes."""
-"""End-to-end tests verify complete user workflows through the application.
+def test_authenticated_user_can_logout(client):
+    """An authenticated user can log out."""
 
-These tests exercise the application from the external interface, such as
-HTTP requests, through the relevant application layers and into the database.
-They verify that the different components work together correctly to produce
-the expected behavior from a user's perspective.
-"""
-
-
-def test_login_with_valid_credentials(client):
-    # First create a user through registration.
     client.post(
         "/auth/register",
         data={
@@ -21,7 +12,7 @@ def test_login_with_valid_credentials(client):
         },
     )
 
-    response = client.post(
+    client.post(
         "/auth/login",
         data={
             "email": "john@example.com",
@@ -29,48 +20,15 @@ def test_login_with_valid_credentials(client):
             "submit": "Login",
         },
     )
+
+    response = client.get("/auth/logout")
 
     assert response.status_code == 302
 
 
-def test_login_with_unknown_email(client):
-    response = client.post(
-        "/auth/login",
-        data={
-            "email": "unknown@example.com",
-            "password": "password123",
-            "submit": "Login",
-        },
-    )
+def test_logged_out_user_cannot_access_protected_route(client):
+    """A logged-out user cannot access a protected route."""
 
-    assert response.status_code == 200
-
-
-def test_login_with_incorrect_password(client):
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        },
-    )
-
-    response = client.post(
-        "/auth/login",
-        data={
-            "email": "john@example.com",
-            "password": "wrongpassword",
-            "submit": "Login",
-        },
-    )
-
-    assert response.status_code == 200
-
-
-def test_authenticated_user_can_access_protected_route(client):
     client.post(
         "/auth/register",
         data={
@@ -90,13 +48,39 @@ def test_authenticated_user_can_access_protected_route(client):
             "submit": "Login",
         },
     )
+
+    client.get("/auth/logout")
 
     response = client.get("/profile")
 
-    assert response.status_code == 200
+    assert response.status_code == 302
 
 
-def test_unauthenticated_user_cannot_access_protected_route(client):
+def test_logout_removes_authenticated_session(client):
+    """Logging out removes the user's authenticated session."""
+
+    client.post(
+        "/auth/register",
+        data={
+            "email": "john@example.com",
+            "username": "john",
+            "password": "password123",
+            "password_confirmation": "password123",
+            "submit": "Register",
+        },
+    )
+
+    client.post(
+        "/auth/login",
+        data={
+            "email": "john@example.com",
+            "password": "password123",
+            "submit": "Login",
+        },
+    )
+
+    client.get("/auth/logout")
+
     response = client.get("/profile")
 
     assert response.status_code == 302

@@ -1,11 +1,10 @@
 """HTTP routes for authentication."""
 
-from flask_login import login_user
+from flask_login import login_user, logout_user
 from flask import (    
     url_for,
     redirect,
-    render_template,
-    request    
+    render_template    
 )
 
 from app.extensions import db
@@ -22,14 +21,6 @@ def register():
     """Register a new user."""
 
     form = RegistrationForm()
-
-    print("\n")
-    print("REQUEST LINE:")
-    print(request.method, request.path)
-
-    print("\n")
-    print("HEADERS:")
-    print(request.headers)
 
     if form.validate_on_submit():
         # Create the application service with the dependencies
@@ -99,3 +90,11 @@ def login():
             return redirect(url_for("main.home")) 
 
     return render_template("auth/login.html", form=form)
+
+
+@auth_blueprint.route("/logout")
+def logout():
+    """Log out the currently authenticated user."""
+    
+    logout_user()
+    return redirect(url_for("main.home"))
