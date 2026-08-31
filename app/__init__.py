@@ -1,5 +1,6 @@
 """Create and configure the Flask application using the application factory pattern."""
 
+from flask_wtf.csrf import CSRFError
 from flask import Flask, render_template
 
 from app.config import config
@@ -15,7 +16,7 @@ from app.extensions import (
 
 
 def create_app(config_name: str = "default") -> Flask:
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="templates", static_folder="static")
 
     # Load configuration settings into Flask application configuration.
     app.config.from_object(config[config_name])
@@ -45,5 +46,10 @@ def create_app(config_name: str = "default") -> Flask:
         """Render the custom page shown when an internal server error occurs."""
         db.session.rollback()
         return render_template("errors/500.html"), 500
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        """Render the custom page shown when CSRF validation fails."""
+        return render_template("errors/400.html", error=error), 400
 
     return app

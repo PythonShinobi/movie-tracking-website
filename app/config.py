@@ -59,6 +59,7 @@ class ProductionConfig(Config):
         f"sqlite:///{os.path.join(basedir, 'data-prod.sqlite')}"
     )
 
+
 config = {
     "development": DevelopmentConfig,
     "testing": TestingConfig,
