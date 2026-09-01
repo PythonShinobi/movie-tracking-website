@@ -14,3 +14,8 @@ class User:
         self.email = email
         self.username = username
         self.password_hash = password_hash
+
+    def change_password(self, password_hash: str) -> None:
+        """Replace the user's current password hash."""
+
+        self.password_hash = password_hash

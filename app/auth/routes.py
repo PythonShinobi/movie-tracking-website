@@ -1,6 +1,13 @@
 """HTTP routes for authentication."""
 
-from flask_login import login_user, logout_user
+from flask_login import (
+    login_user,
+    logout_user,
+    login_required,
+    current_user,
+    fresh_login_required
+)
+
 from flask import (    
     url_for,
     redirect,
@@ -9,11 +16,15 @@ from flask import (
 
 from app.extensions import db
 from app.auth import auth as auth_blueprint
-from app.auth.forms import RegistrationForm, LoginForm
 from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
 from app.adapters.flask_login_user import FlaskLoginUser
 from app.services.authentication import AuthenticationService
+from app.auth.forms import (
+    RegistrationForm, 
+    LoginForm, 
+    ChangePasswordForm
+)
 
 
 @auth_blueprint.route("/register", methods=["GET", "POST"])
@@ -98,3 +109,36 @@ def logout():
     
     logout_user()
     return redirect(url_for("main.home"))
+
+
+@auth_blueprint.route("/change-password", methods=["GET", "POST"])
+@login_required
+@fresh_login_required
+def change_password():
+    """Allow an authenticated user to change their password."""
+
+    form = ChangePasswordForm()
+
+    if form.validate_on_submit():
+        service = AuthenticationService(
+            repository=UserRepository(),
+            password_hasher=PasswordHasher()
+        )
+
+        try:
+            service.change_password(
+                user=current_user.user,
+                old_password=form.old_password.data,
+                new_password=form.new_password.data
+            )
+
+            db.session.commit()
+        
+        except ValueError as error:
+            form.old_password.errors.append(str(error))
+
+        else:
+            logout_user()
+            return redirect(url_for("auth.login"))
+
+    return render_template("auth/change_password.html", form=form)

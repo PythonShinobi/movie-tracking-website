@@ -2,6 +2,7 @@
 
 import pytest
 
+from app.extensions import db
 from app.domain.user import User
 from app.services.authentication import AuthenticationService
 
@@ -187,4 +188,100 @@ def test_login_rejects_incorrect_password() -> None:
         service.login(
             email="john@example.com",
             password="wrong_password"
+        )
+
+
+def test_change_password_updates_password(app, repository, password_hasher):
+    """Changing a password replaces the user's existing password hash."""
+
+    with app.app_context():
+        service = AuthenticationService(repository, password_hasher)
+
+        user = User(
+            id=None,
+            email="john@example.com",
+            username="john",
+            password_hash=password_hasher.hash("oldpassword")
+        )
+
+        repository.add(user)
+        db.session.commit()
+
+        old_hash = user.password_hash
+
+        service.change_password(
+            user=user,
+            old_password="oldpassword",
+            new_password="newpassword"
+        )
+
+        assert user.password_hash != old_hash
+        assert password_hasher.verify(
+            "newpassword",
+            user.password_hash
+        )
+
+
+def test_change_password_rejects_incorrect_current_password(
+    app,
+    repository,
+    password_hasher
+):
+    """Changing a password fails when the current password is incorrect."""
+
+    with app.app_context():
+        service = AuthenticationService(repository, password_hasher)
+
+        user = User(
+            id=None,
+            email="john@example.com",
+            username="john",
+            password_hash=password_hasher.hash("oldpassword")
+        )
+
+        repository.add(user)
+        db.session.commit()
+
+        with pytest.raises(ValueError, match="Invalid current password."):
+            service.change_password(
+                user=user,
+                old_password="wrongpassword",
+                new_password="newpassword"
+            )
+
+
+def test_change_password_saves_user(
+    app,
+    repository,
+    password_hasher
+):
+    """Changing a password persists the updated user through the repository."""
+
+    with app.app_context():
+        service = AuthenticationService(repository, password_hasher)
+
+        user = User(
+            id=None,
+            email="john@example.com",
+            username="john",
+            password_hash=password_hasher.hash("oldpassword")
+        )
+
+        repository.add(user)
+        db.session.commit()
+
+        service.change_password(
+            user=user,
+            old_password="oldpassword",
+            new_password="newpassword"
+        )
+
+        db.session.commit()
+
+        saved_user = repository.get_by_email("john@example.com")
+
+        assert saved_user is not None
+        assert password_hasher.verify(
+            "newpassword",
+            saved_user.password_hash
         )

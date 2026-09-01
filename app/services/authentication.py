@@ -65,3 +65,20 @@ class AuthenticationService:
             raise ValueError("Invalid email or password")
 
         return user
+
+    def change_password(
+        self,
+        user: User,
+        old_password: str,
+        new_password: str
+    ) -> None:
+        """Change a user's password after verifying the current password."""
+
+        if not self.password_hasher.verify(old_password, user.password_hash):
+            raise ValueError("Invalid current password.")
+
+        new_password_hash = self.password_hasher.hash(new_password)
+
+        user.change_password(new_password_hash)
+
+        self.user_repository.save_password_change(user)

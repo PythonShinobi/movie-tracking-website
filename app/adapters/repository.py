@@ -50,3 +50,13 @@ class UserRepository:
             return None
 
         return user_model_record_to_user_object(user_model_record)
+
+    def save_password_change(self, user: User) -> None:
+        """Persist a password change for a user."""
+    
+        user_model_record = UserModelRecord.query.get(user.id)
+    
+        if user_model_record is None:
+            raise ValueError("User does not exist.")
+    
+        user_model_record.password_hash = user.password_hash
