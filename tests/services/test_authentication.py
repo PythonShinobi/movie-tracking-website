@@ -26,6 +26,11 @@ class FakeRepository:
             None
         )
 
+    def delete(self, user: User) -> None:
+        """Remove a user from memory."""
+
+        self.users.remove(user)
+
 
 class FakePasswordHasher:
     """Fake password hasher used to test the service."""
@@ -191,7 +196,11 @@ def test_login_rejects_incorrect_password() -> None:
         )
 
 
-def test_change_password_updates_password(app, repository, password_hasher):
+def test_change_password_updates_password(
+    app, 
+    repository, 
+    password_hasher
+):
     """Changing a password replaces the user's existing password hash."""
 
     with app.app_context():
@@ -285,3 +294,62 @@ def test_change_password_saves_user(
             "newpassword",
             saved_user.password_hash
         )
+
+
+def test_delete_account_deletes_user(
+    app,
+    repository,
+    password_hasher
+):
+    with app.app_context():
+        service = AuthenticationService(
+            repository,
+            password_hasher
+        )
+
+        user = User(
+            id=None,
+            email="john@example.com",
+            username="john",
+            password_hash=password_hasher.hash("password123")
+        )
+        
+        repository.add(user)
+
+        db.session.commit()
+
+        service.delete_account(
+            user=user,
+            password="password123"
+        )
+
+        db.session.commit()
+
+        assert repository.get_by_email("john@example.com") is None
+
+
+def test_delete_account_rejects_incorrect_password(
+    app,
+    repository,
+    password_hasher
+):
+    with app.app_context():
+        service = AuthenticationService(repository, password_hasher)
+
+        user = User(
+            id=None,
+            email="john@example.com",
+            username="john",
+            password_hash=password_hasher.hash("password123")
+        )
+
+        repository.add(user)
+
+        db.session.commit()
+
+        with pytest.raises(ValueError, match="Invalid password."):
+            service.delete_account(user, "wrongpassword")
+
+        assert repository.get_by_email("john@example.com") is not None
+
+

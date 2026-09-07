@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Account - Movie Tracking{% endblock %}
+
+{% block content %}
+
+    <h1>Delete Account</h1>
+
+    <p>
+        You are about to permanently delete your Movie Tracking account.
+    </p>
+
+    <p>
+        This action cannot be undone.
+    </p>
+
+    <form method="POST">
+
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.password.label }}
+            {{ form.password() }}
+
+            {% for error in form.password.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.confirm() }}
+            {{ form.confirm.label }}
+
+            {% for error in form.confirm.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.submit() }}
+        </div>
+
+    </form>
+
+    <p>
+        <a href="{{ url_for('main.home') }}">
+            Cancel
+        </a>
+    </p>
+
+{% endblock %}

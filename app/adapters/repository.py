@@ -60,3 +60,13 @@ class UserRepository:
             raise ValueError("User does not exist.")
     
         user_model_record.password_hash = user.password_hash
+
+    def delete(self, user: User) -> None:
+        """Delete a user from persistent storage."""
+
+        user_model_record = UserModelRecord.query.get(user.id)
+
+        if user_model_record is None:
+            raise ValueError("User does not exist.")
+
+        db.session.delete(user_model_record)

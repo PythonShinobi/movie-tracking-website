@@ -1,6 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length
+from wtforms.validators import (
+    DataRequired, 
+    Email, 
+    EqualTo, 
+    Length
+)
+from wtforms import (
+    PasswordField, 
+    StringField, 
+    SubmitField, 
+    BooleanField
+)
 
 
 class RegistrationForm(FlaskForm):
@@ -62,3 +72,21 @@ class ChangePasswordForm(FlaskForm):
     ])
 
     submit = SubmitField("Update Password")
+
+
+class DeleteAccountForm(FlaskForm):
+    """Form used to permanently delete the authenticated
+        user's account.
+    """
+
+    password = PasswordField(
+        "Password",
+        validators=[DataRequired()]
+    )
+
+    confirm = BooleanField(
+        """I understand that this action cannot be undone.""",
+        validators=[DataRequired()]
+    )
+
+    submit = SubmitField("Delete Account")

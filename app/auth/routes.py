@@ -23,7 +23,8 @@ from app.services.authentication import AuthenticationService
 from app.auth.forms import (
     RegistrationForm, 
     LoginForm, 
-    ChangePasswordForm
+    ChangePasswordForm,
+    DeleteAccountForm
 )
 
 
@@ -58,7 +59,8 @@ def register():
             # business rule, such as an email that already exists.
             form.email.errors.append(str(error))
 
-        # Execute this else block only if the try block finishes without raising an exception
+        # Execute this else block only if the try block finishes 
+        # without raising an exception
         else:
             # Registration succeeded, so redirect to the login page.
             return redirect(url_for("auth.login"))
@@ -91,7 +93,8 @@ def login():
             # The service rejected the credentials.
             form.email.errors.append(str(error))
 
-        # Execute this else block only if the try block finishes without raising an exception
+        # Execute this else block only if the try block finishes 
+        # without raising an exception
         else:
             # Authenticated succeeded, so create the user's
             # authenticated Flask-Login session.
@@ -108,6 +111,7 @@ def logout():
     """Log out the currently authenticated user."""
     
     logout_user()
+
     return redirect(url_for("main.home"))
 
 
@@ -139,6 +143,45 @@ def change_password():
 
         else:
             logout_user()
+
             return redirect(url_for("auth.login"))
 
     return render_template("auth/change_password.html", form=form)
+
+
+@auth_blueprint.route("/delete-account", methods=["GET", "POST"])
+@login_required
+@fresh_login_required
+def delete_account():
+    form = DeleteAccountForm()
+
+    if form.validate_on_submit():
+        if not form.confirm.data:
+            form.confirm.errors.append(
+                "You must confirm that you understand this action."
+            )
+
+            return render_template("auth/delete_account.html", form=form)
+
+        service = AuthenticationService(
+            repository=UserRepository(),
+            password_hasher=PasswordHasher()
+        )
+
+        try:
+            service.delete_account(
+                user=current_user.user,
+                password=form.password.data
+            )
+
+            db.session.commit()
+
+        except ValueError as error:
+            form.password.errors.append(str(error))
+
+        else:
+            logout_user()
+
+            return redirect(url_for("main.home"))
+
+    return render_template("auth/delete_account.html", form=form)

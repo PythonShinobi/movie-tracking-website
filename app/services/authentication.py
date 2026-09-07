@@ -82,3 +82,17 @@ class AuthenticationService:
         user.change_password(new_password_hash)
 
         self.user_repository.save_password_change(user)
+
+    def delete_account(
+        self,
+        user: User,
+        password: str
+    ) -> None:
+        """Delete a user's account after verifying their password."""
+
+        if not self.password_hasher.verify(
+            password, user.password_hash
+        ):
+            raise ValueError("Invalid password.")
+
+        self.user_repository.delete(user)
