@@ -9,13 +9,18 @@ class User:
             email: str,
             username: str,
             password_hash: str,
+            email_verified: bool = False
     ) -> None:
         self.id = id
         self.email = email
         self.username = username
         self.password_hash = password_hash
+        self.email_verified = email_verified
 
     def change_password(self, password_hash: str) -> None:
         """Replace the user's current password hash."""
 
         self.password_hash = password_hash
+
+    def verify_email(self) -> None:
+        self.email_verified = True

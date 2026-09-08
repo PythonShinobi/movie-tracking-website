@@ -12,6 +12,7 @@ from app.extensions import (
     migrate,
     bootstrap,
     login_manager,
+    mail
 )
 
 
@@ -29,6 +30,7 @@ def create_app(config_name: str = "default") -> Flask:
     bootstrap.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    mail.init_app(app)
 
     # Register authentication blueprint with application.
     app.register_blueprint(auth_blueprint, url_prefix="/auth")

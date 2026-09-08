@@ -21,7 +21,8 @@ def user_object_to_user_model_record(user: User) -> UserModelRecord:
         id=user.id,
         email=user.email,
         username=user.username,
-        password_hash=user.password_hash
+        password_hash=user.password_hash,
+        email_verified=user.email_verified
     )
 
 def user_model_record_to_user_object(user_model_record: UserModelRecord) -> User:
@@ -31,5 +32,6 @@ def user_model_record_to_user_object(user_model_record: UserModelRecord) -> User
         id=user_model_record.id,
         email=user_model_record.email,
         username=user_model_record.username,
-        password_hash=user_model_record.password_hash
+        password_hash=user_model_record.password_hash,
+        email_verified=user_model_record.email_verified
     )

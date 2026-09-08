@@ -20,6 +20,15 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_REFRESH_EACH_REQUEST = False
 
+    # Email Configuration
+    MAIL_SERVER = os.environ.get("MAIL_SERVER")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_SUBJECT_PREFIX = "[Movie Tracking]"
+    MAIL_SENDER = os.environ.get("MAIL_SENDER")
+
     # CSRF
     WTF_CSRF_TIME_LIMIT = 3600
 

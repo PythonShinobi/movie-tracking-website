@@ -28,9 +28,10 @@ class UserModelRecord(db.Model):
         - password_hash: Stores the user's hashed password.
     """
 
-    __tablename__ = "users"
+    __tablename__ = "user_model_record"
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)

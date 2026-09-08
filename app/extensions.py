@@ -12,6 +12,7 @@ Examples:
     - LoginManager: Manages user authentication and login sessions.
 """
 
+from flask_mail import Mail
 from flask_wtf import CSRFProtect
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -26,6 +27,8 @@ csrf = CSRFProtect()
 bootstrap = Bootstrap()
 
 migrate = Migrate()
+
+mail = Mail()
 
 login_manager = LoginManager()
 # Flask-Login will know where to send an unauthenticated user 
