@@ -12,10 +12,13 @@ Examples:
 
 from app.extensions import db
 from app.domain.user import User
-from app.adapters.orm import UserModelRecord
+from app.domain.email_verification_token import EmailVerificationToken
+from app.adapters.orm import UserModelRecord, EmailVerificationTokenModelRecord
 from app.adapters.mappers import (
     user_object_to_user_model_record,
-    user_model_record_to_user_object
+    user_model_record_to_user_object,
+    email_verification_token_model_record_to_object,
+    email_verification_token_object_to_model_record
 )
 
 
@@ -70,3 +73,38 @@ class UserRepository:
             raise ValueError("User does not exist.")
 
         db.session.delete(user_model_record)
+
+
+class EmailVerificationTokenRepository:
+    def add(self, token: EmailVerificationToken) -> None:
+        token_record = email_verification_token_object_to_model_record(token)
+
+        db.session.add(token_record)
+        db.session.flush()
+
+        token.id = token_record.id
+
+    def get_by_token_hash(self, token_hash: str) -> EmailVerificationToken:
+        token_record = (
+            EmailVerificationTokenModelRecord
+            .query
+            .filter_by(token_hash=token_hash)
+            .first()
+        )
+
+        if token_record is None:
+            return None
+
+        return email_verification_token_model_record_to_object(token_record)
+
+    def save(self, token: EmailVerificationToken) -> None:
+        token_record = (
+            EmailVerificationTokenModelRecord
+            .query
+            .get(token.id)
+        )
+
+        if token_record is None:
+            raise ValueError("Verification token does not exist.")
+
+        token_record.used_at = token.used_at
