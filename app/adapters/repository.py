@@ -84,7 +84,9 @@ class EmailVerificationTokenRepository:
 
         token.id = token_record.id
 
-    def get_by_token_hash(self, token_hash: str) -> EmailVerificationToken:
+    def get_by_token_hash(
+        self, token_hash: str
+    ) -> EmailVerificationToken | None:
         token_record = (
             EmailVerificationTokenModelRecord
             .query

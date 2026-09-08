@@ -2,6 +2,7 @@
 
 from app.adapters.password_hasher import PasswordHasher
 
+
 def test_hash_does_not_return_plaintext_password() -> None:
     hasher = PasswordHasher()
 
@@ -10,6 +11,7 @@ def test_hash_does_not_return_plaintext_password() -> None:
     password_hash = hasher.hash(password)
 
     assert password_hash != password
+
 
 def test_hash_returns_different_hashes_for_same_password() -> None:
     hasher = PasswordHasher()
@@ -20,6 +22,7 @@ def test_hash_returns_different_hashes_for_same_password() -> None:
     second_hash = hasher.hash(password)
 
     assert first_hash != second_hash
+
 
 def test_verify_returns_true_for_correct_password() -> None:
     hasher = PasswordHasher()
