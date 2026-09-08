@@ -35,3 +35,33 @@ class UserModelRecord(db.Model):
     username = db.Column(db.String(64), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     email_verified = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class EmailVerificationTokenModelRecord(db.Model):
+    """Represent an email verification token in the database."""
+
+    __tablename__ = "email_verification_token_record"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer, 
+        db.ForeignKey("user_model_record.id"),
+        nullable=False
+    )
+
+    token_hash = db.Column(
+        db.String(64),
+        unique=True,
+        nullable=False
+    )
+
+    expires_at = db.Column(
+        db.DateTime,
+        nullable=False
+    )
+
+    used_at = db.Column(
+        db.DateTime,
+        nullable=True
+    )
