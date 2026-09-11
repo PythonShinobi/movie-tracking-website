@@ -1,8 +1,27 @@
+"""Domain model representing email verification tokens.
+
+This module defines the EmailVerificationToken domain object used to
+represent the state of a token issued when a user needs to verify their
+email address.
+
+The domain object stores the token's ownership, hashed value, expiration
+time, and usage state. It also contains the business behavior for
+determining whether a token has expired, determining whether it has
+already been used, and marking it as used after successful verification.
+
+The domain model does not depend on the database, email system, or Flask.
+"""
+
+
 from datetime import datetime
 
 
 class EmailVerificationToken:
-    """Represent a token used to verify a user's email address"""
+    """Represent a token used to verify a user's email address.
+
+    The token tracks which user it belongs to, when it expires, and
+    whether it has already been used.
+    """
 
     def __init__(
         self,

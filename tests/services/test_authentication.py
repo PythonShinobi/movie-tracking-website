@@ -317,6 +317,43 @@ def test_verify_email_marks_user_as_verified():
     assert user.email_verified is True
 
 
+def test_verify_email_rejects_expired_token():
+    """Reject verification when the token has expired."""
+    
+    user = User(
+        id=1,
+        email="test@example.com",
+        username="testuser",
+        password_hash="hashed-password"
+    )
+
+    user_repository = FakeUserRepository()
+    user_repository.users.append(user)
+
+    token_service = EmailVerificationTokenService()
+    token, raw_token = token_service.create_verification_token(user.id)
+
+    # Make the token expired.
+    token.expires_at = datetime.now(UTC) - timedelta(minutes=1)
+
+    token_repository = FakeTokenRepository()
+    token_repository.add(token)
+
+    service = AuthenticationService(
+        repository=user_repository,
+        password_hasher=FakePasswordHasher(),
+        token_service=token_service,
+        token_repository=token_repository,
+        email_sender=FakeEmailSender()
+    )
+
+    # Act / Assert
+    with pytest.raises(ValueError, match="Verification token has expired."):
+        service.verify_email(raw_token)
+
+    assert user.email_verified is False
+
+
 def test_verify_email_rejects_used_token():
     fake_repository = FakeUserRepository()
     fake_token_repository = FakeTokenRepository()

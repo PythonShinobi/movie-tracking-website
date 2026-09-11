@@ -1,3 +1,15 @@
+"""Application service for generating email verification tokens.
+
+This module provides the application logic required to create secure
+email verification tokens. It generates a cryptographically random raw
+token, creates a SHA-256 hash for secure database storage, and creates
+an EmailVerificationToken domain object with a fixed expiration time.
+
+The raw token is returned to the application so it can be sent to the
+user by email, while only the hashed token is stored in persistent
+storage.
+"""
+
 import secrets
 import hashlib
 from datetime import (
@@ -10,8 +22,13 @@ from app.domain.email_verification_token import EmailVerificationToken
 
 
 class EmailVerificationTokenService:
-    """Generate secure email verification tokens."""
+    """Generate and prepare secure email verification tokens.
 
+    This service generates cryptographically secure tokens, hashes them
+    for storage, and creates EmailVerificationToken domain objects with
+    an expiration time.
+    """
+    
     TOKEN_EXPIRATION_MINUTES = 30
 
     def generate_token_and_hash(self) -> tuple[str, str]:

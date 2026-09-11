@@ -38,7 +38,12 @@ class UserModelRecord(db.Model):
 
 
 class EmailVerificationTokenModelRecord(db.Model):
-    """Represent an email verification token in the database."""
+    """Represent an email verification token in the database.
+
+    This SQLAlchemy model represents the database record used to persist
+    email verification tokens. It belongs to the infrastructure layer and
+    is separate from the EmailVerificationToken domain object.
+    """
 
     __tablename__ = "email_verification_token_record"
 
