@@ -17,10 +17,14 @@ class User:
         self.password_hash = password_hash
         self.email_verified = email_verified
 
+
     def change_password(self, password_hash: str) -> None:
         """Replace the user's current password hash."""
 
         self.password_hash = password_hash
 
+
     def verify_email(self) -> None:
+        """Set domain object email_verified state to True."""
+        
         self.email_verified = True

@@ -1,13 +1,16 @@
 """Tests for the authentication application service."""
 
 import pytest
+from datetime import datetime, UTC, timedelta
 
 from app.extensions import db
 from app.domain.user import User
+from app.services.token import EmailVerificationTokenService
 from app.services.authentication import AuthenticationService
+from app.domain.email_verification_token import EmailVerificationToken
 
 
-class FakeRepository:
+class FakeUserRepository:
     """In-memory repository used to test the authentication service."""
 
     def __init__(self) -> None:
@@ -26,6 +29,20 @@ class FakeRepository:
             None
         )
 
+    def get_by_id(self, user_id: int) -> User | None:
+        """Find a user by id."""
+
+        return next(
+            (user for user in self.users if user.id == user_id),
+            None
+        )
+
+
+    def save(self, user):
+        """Persist changes to an existing user in memory."""
+        
+        return None
+
     def delete(self, user: User) -> None:
         """Remove a user from memory."""
 
@@ -37,20 +54,80 @@ class FakePasswordHasher:
 
     def hash(self, password: str) -> str:
         """Return a predictable password hash."""
+
         return f"hashed-{password}"
 
-    def verify(self, password: str, password_hash: str) -> bool:
+    def verify(
+        self, 
+        password: str, 
+        password_hash: str
+    ) -> bool:
         """Verify a password against the predictable fake hash."""
+
         return self.hash(password) == password_hash
 
 
+class FakeEmailSender:
+
+    def __init__(self):
+        self.sent_emails = []
+
+    def __call__(
+        self,
+        to,
+        subject,
+        template,
+        **kwargs
+    ):
+        self.sent_emails.append({
+            "to": to,
+            "subject": subject,
+            "template": template,
+            "kwargs": kwargs,
+        })
+
+
+class FakeTokenRepository:
+    """In-memory repository used to test verification-token behavior."""
+
+    def __init__(self):
+        self.tokens = []
+
+    def add(self, token):
+        """Store a verification token in memory."""
+
+        self.tokens.append(token)
+
+    def get_by_token_hash(self, token_hash):
+        """Return a token by its hashed value."""
+
+        return next(
+            (
+                token
+                for token in self.tokens
+                if token.token_hash == token_hash
+            ),
+            None,
+        )
+
+    def save(self, token):
+        """Persist changes to an existing token."""
+
+        return None
+
+
 def test_register_creates_user() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+    token_repository = FakeTokenRepository()
 
     service = AuthenticationService(
         repository=repository,
-        password_hasher=password_hasher
+        password_hasher=password_hasher,
+        token_service=EmailVerificationTokenService(),
+        token_repository=token_repository,
+        email_sender=email_sender
     )
 
     user = service.register(
@@ -64,13 +141,51 @@ def test_register_creates_user() -> None:
     assert user.password_hash == "hashed-password123"
 
 
+def test_register_creates_verification_token():
+    fake_repository = FakeUserRepository()
+    fake_token_repository = FakeTokenRepository()
+    fake_password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+
+    service = AuthenticationService(
+        repository=fake_repository,
+        password_hasher=fake_password_hasher,
+        token_service=EmailVerificationTokenService(),
+        token_repository=fake_token_repository,
+        email_sender=email_sender
+    )
+
+    user = service.register(
+        email="john@example.com",
+        username="john",
+        password="password"
+    )
+
+    assert user.email == "john@example.com"
+    assert user.email_verified is False
+
+    assert len(fake_token_repository.tokens) == 1
+
+    token = fake_token_repository.tokens[0]
+
+    assert token.user_id == user.id
+    assert token.used_at is None
+
+    assert len(email_sender.sent_emails) == 1
+    
+
 def test_register_adds_user_to_repository() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+    token_repository = FakeTokenRepository()
 
     service = AuthenticationService(
         repository=repository,
-        password_hasher=password_hasher
+        password_hasher=password_hasher,
+        token_service=EmailVerificationTokenService(),
+        token_repository=token_repository,
+        email_sender=email_sender
     )
 
     user = service.register(
@@ -83,12 +198,17 @@ def test_register_adds_user_to_repository() -> None:
 
 
 def test_register_hashes_password() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+    token_repository = FakeTokenRepository()
 
     service = AuthenticationService(
         repository=repository,
-        password_hasher=password_hasher
+        password_hasher=password_hasher,
+        token_service=EmailVerificationTokenService(),
+        token_repository=token_repository,
+        email_sender=email_sender
     )
 
     user = service.register(
@@ -102,8 +222,18 @@ def test_register_hashes_password() -> None:
 
 
 def test_register_rejects_existing_email() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+    token_repository = FakeTokenRepository()
+
+    service = AuthenticationService(
+        repository=repository,
+        password_hasher=password_hasher,
+        token_service=EmailVerificationTokenService(),
+        token_repository=token_repository,
+        email_sender=email_sender
+    )
 
     existing_user = User(
         id=1,
@@ -114,11 +244,6 @@ def test_register_rejects_existing_email() -> None:
 
     repository.add(existing_user)
 
-    service = AuthenticationService(
-        repository=repository,
-        password_hasher=password_hasher
-    )
-
     with pytest.raises(ValueError, match="Email already exists."):
         service.register(
             email="john@example.com",
@@ -127,8 +252,124 @@ def test_register_rejects_existing_email() -> None:
         )
 
 
+def test_register_sends_raw_verification_token_by_email():
+    fake_repository = FakeUserRepository()
+    fake_token_repository = FakeTokenRepository()
+    fake_password_hasher = FakePasswordHasher()
+    email_sender = FakeEmailSender()
+
+    verification_token_service = EmailVerificationTokenService()
+
+    service = AuthenticationService(
+        repository=fake_repository,
+        password_hasher=fake_password_hasher,
+        token_service=verification_token_service,
+        token_repository=fake_token_repository,
+        email_sender=email_sender
+    )
+
+    service.register(
+        email="john@example.com",
+        username="john",
+        password="password"
+    )
+
+    email = email_sender.sent_emails[0]
+
+    assert email["to"] == "john@example.com"
+    assert email["subject"] == "Verify your email"
+    assert email["template"] == "auth/email/verify_email"
+
+    raw_token = email["kwargs"]["token"]
+
+    assert raw_token is not None
+    assert raw_token != fake_token_repository.tokens[0].token_hash
+
+
+def test_verify_email_marks_user_as_verified():
+    fake_user_repo = FakeUserRepository()
+    fake_token_repo = FakeTokenRepository()
+    email_sender = FakeEmailSender()
+    fake_password_hasher = FakePasswordHasher()
+
+    token_service = EmailVerificationTokenService()
+
+    service = AuthenticationService(
+        repository=fake_user_repo,
+        password_hasher=fake_password_hasher,
+        token_service=token_service,
+        token_repository=fake_token_repo,
+        email_sender=email_sender
+    )
+
+    user = service.register(
+        email="john@example.com",
+        username="john",
+        password="password"
+    )
+
+    assert user.email_verified is False
+
+    raw_token = email_sender.sent_emails[0]["kwargs"]["token"]
+
+    service.verify_email(raw_token)
+
+    assert user.email_verified is True
+
+
+def test_verify_email_rejects_used_token():
+    fake_repository = FakeUserRepository()
+    fake_token_repository = FakeTokenRepository()
+    email_sender = FakeEmailSender()
+
+    service = AuthenticationService(
+        repository=fake_repository,
+        password_hasher=FakePasswordHasher(),
+        token_service=EmailVerificationTokenService(),
+        token_repository=fake_token_repository,
+        email_sender=email_sender,
+    )
+
+    user = service.register(
+        email="john@example.com",
+        username="john",
+        password="password",
+    )
+
+    raw_token = email_sender.sent_emails[0]["kwargs"]["token"]
+
+    service.verify_email(raw_token)
+
+    assert user.email_verified is True
+
+    with pytest.raises(
+        ValueError,
+        match="Verification token has already been used",
+    ):
+        service.verify_email(raw_token)
+
+
+def test_verify_email_rejects_invalid_token():
+    fake_repository = FakeUserRepository()
+    fake_token_repository = FakeTokenRepository()
+
+    service = AuthenticationService(
+        repository=fake_repository,
+        password_hasher=FakePasswordHasher(),
+        token_service=EmailVerificationTokenService(),
+        token_repository=fake_token_repository,
+        email_sender=FakeEmailSender(),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Invalid verification token",
+    ):
+        service.verify_email("not-a-real-token")
+
+
 def test_login_returns_user_with_valid_credentials() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
 
     user = User(
@@ -154,7 +395,7 @@ def test_login_returns_user_with_valid_credentials() -> None:
 
 
 def test_login_rejects_unknown_email() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
 
     service = AuthenticationService(
@@ -170,7 +411,7 @@ def test_login_rejects_unknown_email() -> None:
 
 
 def test_login_rejects_incorrect_password() -> None:
-    repository = FakeRepository()
+    repository = FakeUserRepository()
     password_hasher = FakePasswordHasher()
 
     user = User(
@@ -351,5 +592,4 @@ def test_delete_account_rejects_incorrect_password(
             service.delete_account(user, "wrongpassword")
 
         assert repository.get_by_email("john@example.com") is not None
-
 

@@ -1,8 +1,15 @@
 """Application services for authentication."""
 
+from hashlib import sha256
+from datetime import datetime, UTC
+
 from app.domain.user import User
-from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
+from app.services.token import EmailVerificationTokenService
+from app.adapters.repository import (
+    UserRepository,
+    EmailVerificationTokenRepository
+)
 
 
 class AuthenticationService:
@@ -20,12 +27,19 @@ class AuthenticationService:
     """
 
     def __init__(
-        self, 
+        self,
         repository: UserRepository,
-        password_hasher: PasswordHasher
+        password_hasher: PasswordHasher,
+        token_service: EmailVerificationTokenService | None = None,
+        token_repository: EmailVerificationTokenRepository | None = None,
+        email_sender=None
     ) -> None:
         self.user_repository = repository
         self.password_hasher = password_hasher
+        self.token_service = token_service
+        self.token_repository = token_repository
+        self.email_sender = email_sender
+
 
     def register(
         self,
@@ -33,15 +47,37 @@ class AuthenticationService:
         username: str,
         password: str,
     ) -> User:
-        """Register a new user."""
+        """Register a new user and create an email verification token."""
 
+        if self.token_service is None:
+            # A runtime error occurs when a software program crashes 
+            # or stops working while it is running.
+            raise RuntimeError(
+                "Token service is required for registration."
+            )
+
+        if self.token_repository is None:
+            raise RuntimeError(
+                "Token repository is required for registration."
+            )
+
+        if self.email_sender is None:
+            raise RuntimeError(
+                "Email sender is required for registration."
+            )
+
+        # Find a user associated with the supplied email address.
         existing_user = self.user_repository.get_by_email(email)
 
+        # Check if the supplied email is already registered.
         if existing_user is not None:
+            # Raise an error if an identical email is in the database.
             raise ValueError("Email already exists.")
 
+        # Hash the user supplied password if the email is new.
         password_hash = self.password_hasher.hash(password)
 
+        # Create the user object.
         user = User(
             id=None,
             email=email,
@@ -49,9 +85,29 @@ class AuthenticationService:
             password_hash=password_hash
         )
 
+        # Add the current pending user object to the database.
         self.user_repository.add(user)
 
+        # Create a verification token for the unverified user object.
+        token, raw_token = (
+            self.token_service.create_verification_token(user.id)
+        )
+
+        # Add the current pending token object to the database.
+        self.token_repository.add(token)
+
+        # Send an email to the current registered unverified user which 
+        # contains the verification token.
+        self.email_sender(
+            to=user.email,
+            subject="Verify your email",
+            template="auth/email/verify_email",
+            username=user.username,
+            token=raw_token
+        )
+
         return user
+
 
     def login(self, email: str, password: str) -> User:
         """Authenticate a user using their email and password."""
@@ -65,6 +121,7 @@ class AuthenticationService:
             raise ValueError("Invalid email or password")
 
         return user
+
 
     def change_password(
         self,
@@ -83,6 +140,7 @@ class AuthenticationService:
 
         self.user_repository.save_password_change(user)
 
+
     def delete_account(
         self,
         user: User,
@@ -96,3 +154,45 @@ class AuthenticationService:
             raise ValueError("Invalid password.")
 
         self.user_repository.delete(user)
+
+
+    def verify_email(self, raw_token: str) -> None:
+        """Verify a user's email using a verification token."""
+
+        # Encode raw token value to bytes.
+        raw_token_bytes = raw_token.encode("utf-8")
+
+        # Hash the raw token bytes using sha246.
+        token_hash = sha256(raw_token_bytes).hexdigest()
+
+        # Fetch EmailVerificationToken object from the database
+        # that is associated with this hash.
+        token = self.token_repository.get_by_token_hash(token_hash)
+
+        # Executes if the requested token is not returned.
+        if token is None:
+            raise ValueError("Invalid verification token.")
+
+        # Get the current time.
+        now = datetime.now(UTC)
+
+        # Check if the token has already been used.
+        if token.is_used():
+            raise ValueError("Verification token has already been used.")
+
+        # Check if the token has already expired.
+        if token.is_expired(now):
+            raise ValueError("Verification token has expired.")
+
+        # Retrieve a user object associated with this token object.
+        user = self.user_repository.get_by_id(token.user_id)
+
+        # Executes if the requested user object is not returned.
+        if user is None:
+            raise ValueError("User does not exist.")
+
+        user.verify_email()
+        self.user_repository.save(user)
+
+        token.mark_used(now)
+        self.token_repository.save(token)

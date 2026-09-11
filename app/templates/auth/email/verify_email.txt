@@ -1,0 +1,9 @@
+Welcome to Movie Tracking, {{ username|capitalize }}!
+
+Thank you for registering.
+
+Please verify your email address by visiting this link:
+
+{{ url_for('auth.verify_email', token=token, _external=True) }}
+
+This verification link will expire after 30 minutes.

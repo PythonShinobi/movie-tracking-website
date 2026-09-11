@@ -7,19 +7,24 @@ from flask_login import (
     current_user,
     fresh_login_required
 )
-
-from flask import (    
+from flask import (
     url_for,
     redirect,
-    render_template    
+    render_template,
+    request
 )
 
 from app.extensions import db
+from app.adapters.email import send_mail
 from app.auth import auth as auth_blueprint
-from app.adapters.repository import UserRepository
 from app.adapters.password_hasher import PasswordHasher
 from app.adapters.flask_login_user import FlaskLoginUser
+from app.services.token import EmailVerificationTokenService
 from app.services.authentication import AuthenticationService
+from app.adapters.repository import (
+    UserRepository,
+    EmailVerificationTokenRepository
+)
 from app.auth.forms import (
     RegistrationForm, 
     LoginForm, 
@@ -39,7 +44,10 @@ def register():
         # required to perform user registration.
         service = AuthenticationService(
             repository=UserRepository(),
-            password_hasher=PasswordHasher()
+            password_hasher=PasswordHasher(),
+            token_service=EmailVerificationTokenService(),
+            token_repository=EmailVerificationTokenRepository(),
+            email_sender=send_mail
         )
 
         try:
@@ -60,7 +68,7 @@ def register():
             form.email.errors.append(str(error))
 
         # Execute this else block only if the try block finishes 
-        # without raising an exception
+        # without raising an exception.
         else:
             # Registration succeeded, so redirect to the login page.
             return redirect(url_for("auth.login"))
@@ -185,3 +193,31 @@ def delete_account():
             return redirect(url_for("main.home"))
 
     return render_template("auth/delete_account.html", form=form)
+
+
+@auth_blueprint.route("/verify-email")
+def verify_email():
+    """Verify a user's email address"""
+
+    token = request.args.get("token")
+
+    if not token:
+        return render_template("/auth/email/verification_failed.html"), 400
+
+    service = AuthenticationService(
+        repository=UserRepository(),
+        password_hasher=PasswordHasher(),
+        token_service=EmailVerificationTokenService(),
+        token_repository=EmailVerificationTokenRepository(),
+        email_sender=send_mail
+    )
+
+    try:
+        service.verify_email(token)
+        db.session.commit()
+
+    except ValueError:
+        db.session.rollback()
+        return render_template("/auth/email/verification_failed.html"), 400
+
+    return render_template("/auth/email/verification_success.html")

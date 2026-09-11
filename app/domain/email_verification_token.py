@@ -19,10 +19,16 @@ class EmailVerificationToken:
         self.used_at = used_at
 
     def is_expired(self, now: datetime) -> bool:
+        """Return True when the token is expired."""
+
         return now >= self.expires_at
 
     def is_used(self) -> bool:
+        """Return True when the token has already been used."""
+
         return self.used_at is not None
 
     def mark_used(self, now: datetime) -> None:
+        """Mark the token as used."""
+        
         self.used_at = now
