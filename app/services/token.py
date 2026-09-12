@@ -35,34 +35,34 @@ class EmailVerificationTokenService:
         """Generate a cryptographically random token and its hash."""
 
         # Generate a url safe token value.
-        raw_token = secrets.token_urlsafe(32)
+        random_token = secrets.token_urlsafe(32)
 
-        # Encode the raw token to bytes.
-        raw_token_bytes = raw_token.encode("utf-8")
+        # Encode the random token to bytes.
+        random_token_bytes = random_token.encode("utf-8")
 
-        # Generate a hash of the raw token bytes using the sha256 function.
-        token_hash = hashlib.sha256(raw_token_bytes).hexdigest()
+        # Generate a hash of the random token bytes using the sha256 function.
+        random_token_hash = hashlib.sha256(random_token_bytes).hexdigest()
 
-        return raw_token, token_hash
+        return random_token, random_token_hash
 
     def create_verification_token(self, user_id: int) -> tuple[EmailVerificationToken, str]:
         """Create a verification token domain object and
-        return its raw token."""
+        return its random token."""
 
-        # Generate a raw token and its hash.
-        raw_token, token_hash = self.generate_token_and_hash()
+        # Generate a random token and its hash.
+        random_token, random_token_hash = self.generate_token_and_hash()
 
         expires_at = (
             datetime.now(timezone.utc)
             + timedelta(minutes=self.TOKEN_EXPIRATION_MINUTES)
         )
 
-        # Create verification token object.
-        token = EmailVerificationToken(
+        # Create a verification token object.
+        token_domain_object = EmailVerificationToken(
             id=None,
             user_id=user_id,
-            token_hash=token_hash,
+            random_token_hash=random_token_hash,
             expires_at=expires_at
         )
 
-        return token, raw_token
+        return token_domain_object, random_token

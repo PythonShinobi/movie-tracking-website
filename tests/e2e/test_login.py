@@ -7,19 +7,21 @@ They verify that the different components work together correctly to produce
 the expected behavior from a user's perspective.
 """
 
+from app.extensions import db
+from app.adapters.orm import UserModelRecord
+from app.adapters.password_hasher import PasswordHasher
 
-def test_login_with_valid_credentials(client):
-    # First create a user through registration.
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        },
-    )
+def test_login_with_valid_credentials(client, app):
+    with app.app_context():
+        user = UserModelRecord(
+            email="john@example.com",
+            username="john",
+            password_hash=PasswordHasher().hash("password123"),
+            email_verified=True,
+        )
+
+        db.session.add(user)
+        db.session.commit()
 
     response = client.post(
         "/auth/login",
@@ -46,17 +48,17 @@ def test_login_with_unknown_email(client):
     assert response.status_code == 200
 
 
-def test_login_with_incorrect_password(client):
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        },
-    )
+def test_login_with_incorrect_password(client, app):
+    with app.app_context():
+        user = UserModelRecord(
+            email="john@example.com",
+            username="john",
+            password_hash=PasswordHasher().hash("password123"),
+            email_verified=True,
+        )
+
+        db.session.add(user)
+        db.session.commit()
 
     response = client.post(
         "/auth/login",
@@ -70,17 +72,17 @@ def test_login_with_incorrect_password(client):
     assert response.status_code == 200
 
 
-def test_authenticated_user_can_access_protected_route(client):
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        },
-    )
+def test_authenticated_user_can_access_protected_route(client, app):
+    with app.app_context():
+        user = UserModelRecord(
+            email="john@example.com",
+            username="john",
+            password_hash=PasswordHasher().hash("password123"),
+            email_verified=True,
+        )
+
+        db.session.add(user)
+        db.session.commit()
 
     client.post(
         "/auth/login",

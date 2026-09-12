@@ -55,7 +55,7 @@ class EmailVerificationTokenModelRecord(db.Model):
         nullable=False
     )
 
-    token_hash = db.Column(
+    random_token_hash = db.Column(
         db.String(64),
         unique=True,
         nullable=False

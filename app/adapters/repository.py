@@ -38,7 +38,7 @@ class UserRepository:
         - delete(): Removes a User from persistent storage.
     """
 
-    def add(self, user: User) -> None:
+    def add(self, user_domain_object: User) -> None:
         """Persist a new user.
 
         The User domain object is converted into a database record and
@@ -50,12 +50,12 @@ class UserRepository:
             user: The User domain object to persist.
         """
 
-        user_model_record = user_object_to_user_model_record(user)
+        user_model_record = user_object_to_user_model_record(user_domain_object)
 
         db.session.add(user_model_record)  # Pending database operation.
         db.session.flush()  # Make the generated ID available.
 
-        user.id = user_model_record.id  # Copy the ID back to the domain user.
+        user_domain_object.id = user_model_record.id  # Copy the ID back to the domain user.
 
     def get_by_id(self, user_id: int) -> User | None:
         """Retrieve a user by database ID.
@@ -97,7 +97,7 @@ class UserRepository:
 
         return user_model_record_to_user_object(user_model_record)
 
-    def save_password_change(self, user: User) -> None:
+    def save_password_change(self, user_domain_object: User) -> None:
         """Persist a password change for an existing user.
 
         The existing database record is located using the user's ID,
@@ -111,14 +111,14 @@ class UserRepository:
             ValueError: If the user does not exist in persistent storage.
         """
 
-        user_model_record = db.session.get(UserModelRecord, user.id)
+        user_model_record = db.session.get(UserModelRecord, user_domain_object.id)
 
         if user_model_record is None:
             raise ValueError("User does not exist.")
 
-        user_model_record.password_hash = user.password_hash
+        user_model_record.password_hash = user_domain_object.password_hash
 
-    def save(self, user: User) -> None:
+    def save(self, user_domain_object: User) -> None:
         """Persist changes made to an existing user.
 
         The existing database record is located using the user's ID,
@@ -132,17 +132,17 @@ class UserRepository:
             ValueError: If the user does not exist in persistent storage.
         """
 
-        user_model_record = db.session.get(UserModelRecord, user.id)
+        user_model_record = db.session.get(UserModelRecord, user_domain_object.id)
 
         if user_model_record is None:
             raise ValueError("User does not exist.")
 
-        user_model_record.email = user.email
-        user_model_record.username = user.username
-        user_model_record.password_hash = user.password_hash
-        user_model_record.email_verified = user.email_verified
+        user_model_record.email = user_domain_object.email
+        user_model_record.username = user_domain_object.username
+        user_model_record.password_hash = user_domain_object.password_hash
+        user_model_record.email_verified = user_domain_object.email_verified
 
-    def delete(self, user: User) -> None:
+    def delete(self, user_domain_object: User) -> None:
         """Delete a user from persistent storage.
 
         The corresponding database record is located using the user's ID
@@ -155,7 +155,7 @@ class UserRepository:
             ValueError: If the user does not exist in persistent storage.
         """
 
-        user_model_record = db.session.get(UserModelRecord, user.id)
+        user_model_record = db.session.get(UserModelRecord, user_domain_object.id)
 
         if user_model_record is None:
             raise ValueError("User does not exist.")
@@ -175,7 +175,7 @@ class EmailVerificationTokenRepository:
     hashed value, and saving changes when a token is marked as used.
     """
 
-    def add(self, token: EmailVerificationToken) -> None:
+    def add(self, token_domain_object: EmailVerificationToken) -> None:
         """Add a new verification token to the database.
 
         The domain token is converted into a database record and added
@@ -187,46 +187,46 @@ class EmailVerificationTokenRepository:
             token: The email verification token to persist.
         """
 
-        token_record = email_verification_token_object_to_model_record(token)
+        token_model_record = email_verification_token_object_to_model_record(token_domain_object)
 
-        db.session.add(token_record)  # Pending database operation.
+        db.session.add(token_model_record)  # Pending database operation.
         db.session.flush()  # Make the generated ID available.
 
-        token.id = token_record.id  # Copy the ID back to the domain object.
+        token_domain_object.id = token_model_record.id  # Copy the ID back to the domain object.
 
     def get_by_token_hash(
         self,
-        token_hash: str
+        random_token_hash: str
     ) -> EmailVerificationToken | None:
         """Retrieve a verification token using its hashed token value.
 
-        The raw verification token is never stored in the database.
+        The random verification token is never stored in the database.
         Instead, the hash supplied by the authentication service is used
         to locate the corresponding database record.
 
         Args:
-            token_hash: SHA-256 hash of the raw verification token.
+            random_token_hash: SHA-256 hash of the raw verification token.
 
         Returns:
             The matching EmailVerificationToken domain object, or None
             if no token with the supplied hash exists.
         """
 
-        token_record = (
+        token_model_record = (
             EmailVerificationTokenModelRecord
             .query
-            .filter_by(token_hash=token_hash)
+            .filter_by(random_token_hash=random_token_hash)
             .first()
         )
 
-        if token_record is None:
+        if token_model_record is None:
             return None
 
         return email_verification_token_model_record_to_object(
-            token_record
+            token_model_record
         )
 
-    def save(self, token: EmailVerificationToken) -> None:
+    def save(self, token_domain_object: EmailVerificationToken) -> None:
         """Persist changes made to an existing verification token.
 
         This method retrieves the existing database record using the
@@ -241,12 +241,12 @@ class EmailVerificationTokenRepository:
             ValueError: If no database record exists for the token ID.
         """
 
-        token_record = db.session.get(
+        token_model_record = db.session.get(
             EmailVerificationTokenModelRecord,
-            token.id
+            token_domain_object.id
         )
 
-        if token_record is None:
+        if token_model_record is None:
             raise ValueError("Verification token does not exist.")
 
-        token_record.used_at = token.used_at
+        token_model_record.used_at = token_domain_object.used_at

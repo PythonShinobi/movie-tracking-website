@@ -13,7 +13,7 @@ The domain model does not depend on the database, email system, or Flask.
 """
 
 
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 class EmailVerificationToken:
@@ -27,20 +27,25 @@ class EmailVerificationToken:
         self,
         id: int | None,
         user_id: int,
-        token_hash: str,
+        random_token_hash: str,
         expires_at: datetime,
         used_at: datetime | None = None
     ) -> None:
         self.id = id
         self.user_id = user_id
-        self.token_hash = token_hash
+        self.random_token_hash = random_token_hash
         self.expires_at = expires_at
         self.used_at = used_at
 
     def is_expired(self, now: datetime) -> bool:
-        """Return True when the token is expired."""
+        """Return True when the verification token has expired."""
 
-        return now >= self.expires_at
+        expires_at = self.expires_at
+
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=UTC)
+
+        return now >= expires_at
 
     def is_used(self) -> bool:
         """Return True when the token has already been used."""

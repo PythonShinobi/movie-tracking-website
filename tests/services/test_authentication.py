@@ -105,7 +105,7 @@ class FakeTokenRepository:
             (
                 token
                 for token in self.tokens
-                if token.token_hash == token_hash
+                if token.random_token_hash == token_hash
             ),
             None,
         )
@@ -280,10 +280,10 @@ def test_register_sends_raw_verification_token_by_email():
     assert email["subject"] == "Verify your email"
     assert email["template"] == "auth/email/verify_email"
 
-    raw_token = email["kwargs"]["token"]
+    random_token = email["kwargs"]["random_token"]
 
-    assert raw_token is not None
-    assert raw_token != fake_token_repository.tokens[0].token_hash
+    assert random_token is not None
+    assert random_token != fake_token_repository.tokens[0].random_token_hash
 
 
 def test_verify_email_marks_user_as_verified():
@@ -310,7 +310,7 @@ def test_verify_email_marks_user_as_verified():
 
     assert user.email_verified is False
 
-    raw_token = email_sender.sent_emails[0]["kwargs"]["token"]
+    raw_token = email_sender.sent_emails[0]["kwargs"]["random_token"]
 
     service.verify_email(raw_token)
 
@@ -373,7 +373,7 @@ def test_verify_email_rejects_used_token():
         password="password",
     )
 
-    raw_token = email_sender.sent_emails[0]["kwargs"]["token"]
+    raw_token = email_sender.sent_emails[0]["kwargs"]["random_token"]
 
     service.verify_email(raw_token)
 
@@ -413,7 +413,8 @@ def test_login_returns_user_with_valid_credentials() -> None:
         id=1,
         email="john@example.com",
         username="john",
-        password_hash="hashed-password123"
+        password_hash="hashed-password123",
+        email_verified=True
     )
 
     repository.add(user)
@@ -597,7 +598,7 @@ def test_delete_account_deletes_user(
         db.session.commit()
 
         service.delete_account(
-            user=user,
+            user_model_object=user,
             password="password123"
         )
 

@@ -1,17 +1,19 @@
+from app.extensions import db
 from app.adapters.orm import UserModelRecord
+from app.adapters.password_hasher import PasswordHasher
 
 
 def test_authenticated_user_can_delete_account(client, app):
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        }
-    )
+    with app.app_context():
+        user = UserModelRecord(
+            email="john@example.com",
+            username="john",
+            password_hash=PasswordHasher().hash("password123"),
+            email_verified=True,
+        )
+
+        db.session.add(user)
+        db.session.commit()
 
     client.post(
         "/auth/login",
@@ -34,24 +36,26 @@ def test_authenticated_user_can_delete_account(client, app):
     assert response.status_code == 302
 
     with app.app_context():
-        user = UserModelRecord.query.filter_by(email="john@example.com").first()
-        
+        user = UserModelRecord.query.filter_by(
+            email="john@example.com"
+        ).first()
+
         assert user is None
 
 
 def test_delete_account_rejects_incorrect_password(client, app):
     """An incorrect password does not delete the account."""
 
-    client.post(
-        "/auth/register",
-        data={
-            "email": "john@example.com",
-            "username": "john",
-            "password": "password123",
-            "password_confirmation": "password123",
-            "submit": "Register",
-        },
-    )
+    with app.app_context():
+        user = UserModelRecord(
+            email="john@example.com",
+            username="john",
+            password_hash=PasswordHasher().hash("password123"),
+            email_verified=True,
+        )
+
+        db.session.add(user)
+        db.session.commit()
 
     client.post(
         "/auth/login",

@@ -48,7 +48,7 @@ def email_verification_token_object_to_model_record(
     return EmailVerificationTokenModelRecord(
         id=token.id,
         user_id=token.user_id,
-        token_hash=token.token_hash,
+        random_token_hash=token.random_token_hash,
         expires_at=token.expires_at,
         used_at=token.used_at
     )
@@ -61,7 +61,7 @@ def email_verification_token_model_record_to_object(
     return EmailVerificationToken(
         id=token_model_record.id,
         user_id=token_model_record.user_id,
-        token_hash=token_model_record.token_hash,
+        random_token_hash=token_model_record.random_token_hash,
         expires_at=token_model_record.expires_at,
         used_at=token_model_record.used_at
     )

@@ -17,6 +17,7 @@ from flask import (
 from app.extensions import db
 from app.adapters.email import send_mail
 from app.auth import auth as auth_blueprint
+from app.auth.decorators import verified_required
 from app.adapters.password_hasher import PasswordHasher
 from app.adapters.flask_login_user import FlaskLoginUser
 from app.services.token import EmailVerificationTokenService
@@ -125,6 +126,7 @@ def logout():
 
 @auth_blueprint.route("/change-password", methods=["GET", "POST"])
 @login_required
+@verified_required
 @fresh_login_required
 def change_password():
     """Allow an authenticated user to change their password."""
@@ -159,6 +161,7 @@ def change_password():
 
 @auth_blueprint.route("/delete-account", methods=["GET", "POST"])
 @login_required
+@verified_required
 @fresh_login_required
 def delete_account():
     form = DeleteAccountForm()
@@ -178,7 +181,7 @@ def delete_account():
 
         try:
             service.delete_account(
-                user=current_user.user,
+                user_model_object=current_user.user,
                 password=form.password.data
             )
 
@@ -199,7 +202,7 @@ def delete_account():
 def verify_email():
     """Verify a user's email address"""
 
-    token = request.args.get("token")
+    token = request.args.get("random_token")
 
     if not token:
         return render_template("/auth/email/verification_failed.html"), 400
@@ -221,3 +224,12 @@ def verify_email():
         return render_template("/auth/email/verification_failed.html"), 400
 
     return render_template("/auth/email/verification_success.html")
+
+
+@auth_blueprint.route("/verification-required")
+@login_required
+def verify_required():
+    """Tell the authenticated user that email
+    verification is required."""
+
+    return render_template("auth/email/verification_required.html")

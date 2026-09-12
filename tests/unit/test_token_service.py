@@ -44,8 +44,8 @@ def test_create_verification_token_stores_hash_and_not_raw_token():
         raw_token.encode("utf-8")
     ).hexdigest()
 
-    assert token.token_hash == expected_hash
-    assert token.token_hash != raw_token
+    assert token.random_token_hash == expected_hash
+    assert token.random_token_hash != raw_token
 
 
 def test_create_verification_token_has_expiration():
